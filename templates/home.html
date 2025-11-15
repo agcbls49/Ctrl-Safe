@@ -13,12 +13,20 @@
 <body>
     <!-- Title Bar -->
     <div class="title-bar text-3xl bg-yellow-300">
-        <nav class="nav-links hover:font-bold">
+        <nav class="nav-links hover:font-bold selection:bg-black selection:text-white">
             <a href="{{ url_for('home') }}">Ctrl + Safe</a>
         </nav>
-        <nav class="nav-links hover:font-bold">
+        <nav class="nav-links hover:font-bold selection:bg-black selection:text-white">
             <a href="{{ url_for('about') }}">About</a>
         </nav>
+    </div>
+    <div class="h-[5%]"></div>
+    <div class="flex justify-center items-center text-3xl font-bold selection:bg-black selection:text-white">
+        Ctrl + Safe
+    </div>
+    <div class="flex justify-center items-center text-2xl selection:bg-black selection:text-white">
+        An automated tool that uses machine learning to detect 
+        hate speech and cyberbullying in social media text.
     </div>
     <!-- Results Panel -->
     <div class="flex justify-center items-center">
