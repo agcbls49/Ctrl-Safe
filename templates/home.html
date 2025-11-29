@@ -29,45 +29,57 @@
         An automated tool that uses machine learning to detect 
         hate speech and cyberbullying in social media text.
     </div>
+    <!-- Disclaimer  -->
+    <div class="flex justify-center mt-6">
+        <div class="w-full text-sm text-gray-600 text-center selection:bg-black selection:text-white">
+            <p>
+                <strong>Disclaimer:</strong> This tool is not 100% accurate.<br>
+                Predictions depend on the quality of the input text and the patterns learned by the machine learning model.<br>
+                Some sentences may not be accurately predicted because language can be nuanced, context-dependent, or contain slang, sarcasm, or mixed meanings.
+            </p>
+        </div>
+    </div>    
     <!-- Results Panel -->
-    <div class="flex justify-center items-center">
-        <div class="container flex justify-center items-start" style="padding-top:10vh; gap:16px;">
-            <!-- Form -->
-            <form style="width:600px;">
-                <textarea rows="15" placeholder="Enter words to detect"
-                    class="p-6 text-xl resize-none border border-gray-300 rounded-xl 
-                    focus:outline-none focus:ring-2 focus:ring-black 
-                    selection:bg-black selection:text-white caret-black"
-                    style="width:100%; height:470px; padding-top:5px; padding-left:5px;"></textarea>
-            </form>
-            <div class="flex flex-col" style="width:600px; gap:16px;">
-                <div class="result-panel border border-black rounded-xl p-4 text-2xl selection:bg-black selection:text-white"
-                    style="height:400px; padding-top:5px; padding-left:5px; border-width:2px;">
-                    <div class="result-text font-bold h-[15%]">Result:</div>
-                    <!-- use class="text-green-600" for green color
-                     and use class="text-red-600" for red color
-                    -->
-                    <div class="text-green-600 text-center text-3xl">
+    <div class="flex justify-center items-start" style="padding-top:10vh; gap:16px;">
+
+        <!-- Left Column: Textarea + Button -->
+        <form style="display:flex; flex-direction:column; gap:16px;" method="POST">
+            <textarea name="input_text" rows="15" placeholder="Enter words to detect"
+                class="p-6 text-xl resize-none border border-gray-300 rounded-xl 
+                focus:outline-none focus:ring-2 focus:ring-black 
+                selection:bg-black selection:text-white caret-black"
+                style="width:600px; height:470px; padding-top:5px; padding-left:5px;">{{ request.form.input_text if request.method=='POST' else '' }}</textarea>
+    
+            <button type="submit" class="bg-yellow-300 hover:bg-yellow-400 active:bg-yellow-400 selection:bg-black selection:text-white"
+                style="padding:10px; font-size:24px; font-weight:bold; color:black; border-radius:0.5rem; border:none; width:100%;">
+                Detect Words
+            </button>
+        </form>
+    
+        <!-- Right Column: Result Panel -->
+        <div class="result-panel border border-black rounded-xl p-4 text-2xl selection:bg-black selection:text-white
+        flex flex-col justify-center items-center"
+            style="width:600px; height:calc(470px + 58px); /* textarea height + button height */
+                   padding-top:5px; padding-left:5px; border-width:2px;">
+            <div class="text-center text-3xl">
+                {% if prediction %}
+                    <div class="{% if prediction.label == 'Hate/Offensive' %}text-red-600{% else %}text-green-600{% endif %}">
+                        {{ prediction.label }}
+                    </div>
+                    <div class="{% if prediction.label == 'Hate/Offensive' %}text-red-600{% else %}text-green-600{% endif %}">
+                        {{ prediction.probability }}%
+                    </div>
+                {% else %}
+                    <div class="text-green-600">
                         No Hate Speech Detected
                     </div>
-                    <div class="h-[25%]"></div>
-                    <div class="probability-text font-bold">Probability:</div>
-                    <div class="h-[10%]"></div>
-                    <!-- use class="text-green-600" for green color
-                     and use class="text-red-600" for red color
-                    -->
-                    <div class="text-green-600 text-center text-3xl">
+                    <div class="text-green-600">
                         0.00%
                     </div>
-                </div>
-                <!-- Detect Button -->
-                <button type="submit" class="bg-yellow-300 hover:bg-yellow-400 active:bg-yellow-400 selection:bg-black selection:text-white"
-                style="padding:10px 10px; font-size:24px; font-weight:bold; color:black; border-radius:0.5rem; border:none;">
-                    Detect Words
-                </button>
+                {% endif %}
             </div>
         </div>
-    </div>
+    </div>    
     <div class="h-[10%]"></div>
 </body>
 </html>
