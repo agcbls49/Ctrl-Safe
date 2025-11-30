@@ -4,12 +4,12 @@ from flask import Flask, render_template, request
 app = Flask(__name__)
 
 # Load the model
-# with open("models/svm_model.pkl", "rb") as f:
-#     model = pickle.load(f)
+with open("models/svm_model.pkl", "rb") as f:
+    model = pickle.load(f)
 
 # Load the model
-with open("models/voting_ensemble.pkl", "rb") as f:
-    model = pickle.load(f)
+# with open("models/voting_nb_svm.pkl", "rb") as f:
+#     model = pickle.load(f)
 
 # Load the model
 # with open("models/nb_model.pkl", "rb") as f:
