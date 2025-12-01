@@ -1,5 +1,99 @@
+import re
 import pickle
 from flask import Flask, render_template, request
+import json
+import nltk
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+
+nltk.download('punkt')
+nltk.download('stopwords')
+nltk.download('punkt_tab')
+
+
+
+# Load Tagalog stopwords from JSON file
+with open("stopwords-tl.json", "r", encoding="utf-8") as f:
+    tagalog_stopwords = set(json.load(f))
+
+# Load English stopwords
+english_stopwords = set(stopwords.words("english"))
+
+# Combine them
+all_stopwords = english_stopwords.union(tagalog_stopwords)
+
+
+# Cleaning Function
+def clean_bilingual_text(text, remove_stopwords=True, normalize_slang=True):
+    text = str(text).lower().strip()
+
+    import re
+
+    # Remove retweet markers
+    text = re.sub(r"\brt\b", "", text)
+
+    # Remove URLs
+    text = re.sub(r"http\S+|www\S+|https\S+", '', text)
+
+    # Remove mentions
+    text = re.sub(r"@\w+", '', text)
+
+    # Remove hashtag symbol but keep the word
+    text = re.sub(r"#", '', text)
+
+    # Remove emojis / punctuation
+    text = re.sub(r"[^\w\s]", "", text)
+
+    # Remove numbers-only tokens
+    text = re.sub(r"\b\d+\b", "", text)
+
+    # Normalize elongated words (helloooo → hello)
+    text = re.sub(r'(.)\1{2,}', r'\1', text)
+
+    # Normalize repeated punctuation
+    text = re.sub(r'([!?.,])\1+', r'\1', text)
+
+    # Social media fillers
+    fillers = r"\b(haha+|lmao+|lol+|hehe+|huhu+|ayy+|omg+|wtf+|tbh|idk|smh|fr|btw|irl)\b"
+    text = re.sub(fillers, "", text)
+
+    # Slang normalization
+    if normalize_slang:
+        slang_dict = {
+            "u": "you",
+            "ur": "your",
+            "pls": "please",
+            "po": "",
+            "naman": "",
+            "kasi": "because",
+            "nga": "",
+            "talaga": "",
+            "ganun": "like that",
+            "pano": "how",
+            "di": "not",
+            "diko": "i dont",
+            "diba": "right",
+            "nung": "when",
+            "amp": "",
+            "tite": "",
+        }
+        for word, replacement in slang_dict.items():
+            text = re.sub(rf"\b{word}\b", replacement, text)
+
+    # Remove extra characters
+    text = re.sub(r"[^a-zA-Z0-9áéíóúñ'\s]", '', text)
+    text = re.sub(r"\s+", " ", text).strip()
+
+    # Tokenize
+    tokens = word_tokenize(text)
+
+    # Apply stopword removal
+    if remove_stopwords:
+        tokens = [t for t in tokens if t not in all_stopwords]
+
+    return " ".join(tokens)
+
+
 
 app = Flask(__name__)
 
@@ -9,10 +103,6 @@ with open("models/svm_model.pkl", "rb") as f:
 
 # Load the model
 # with open("models/voting_nb_svm.pkl", "rb") as f:
-#     model = pickle.load(f)
-
-# Load the model
-# with open("models/nb_model.pkl", "rb") as f:
 #     model = pickle.load(f)
 
 # Load the vectorizer
@@ -25,6 +115,10 @@ def home():
     if request.method == "POST":
         text = request.form.get("input_text", "")
         if text:
+
+            # Clean input text first
+            cleaned_text = clean_bilingual_text(text)
+
             # Transform input text using the vectorizer
             X = vectorizer.transform([text])
             # Get prediction
