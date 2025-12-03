@@ -14,6 +14,6 @@ Cyrelle Kristin P. Gapit <br>
 Francen P. Manalo <br>
 
 ## Screenshots
-<img width="1919" height="935" alt="Image" src="https://github.com/user-attachments/assets/2eb51c67-d5ad-40dd-bbf6-1c02416927a9" />
+<img width="1914" height="917" alt="Image" src="https://github.com/user-attachments/assets/2cd4c461-33cb-4630-83b4-04b3cff65512" />
 
-<img width="1917" height="932" alt="Image" src="https://github.com/user-attachments/assets/3c5d3b48-1b3e-483f-bf2f-fdf38c538817" />
+<img width="1912" height="916" alt="Image" src="https://github.com/user-attachments/assets/f3f182ac-21fd-4ec0-92ff-feda286c6068" />
