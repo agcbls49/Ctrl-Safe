@@ -65,10 +65,10 @@
                    padding-top:5px; padding-left:5px; border-width:2px;">
             <div class="text-center text-3xl">
                 {% if prediction %}
-                    <div class="{% if prediction.label == 'Hate/Offensive' %}text-red-600{% else %}text-green-600{% endif %}">
-                        {{ prediction.label }}
+                <div class="{% if prediction.label == 'Hate/Offensive' or prediction.label == 'Likely Cyberbullying' %}text-red-600{% else %}text-green-600{% endif %}">
+                    {{ prediction.label }}
                     </div>
-                    <div class="{% if prediction.label == 'Hate/Offensive' %}text-red-600{% else %}text-green-600{% endif %}">
+                    <div class="{% if prediction.label == 'Hate/Offensive' or prediction.label == 'Likely Cyberbullying' %}text-red-600{% else %}text-green-600{% endif %}">
                         {{ prediction.probability }}%
                     </div>
                 {% else %}

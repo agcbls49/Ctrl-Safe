@@ -93,6 +93,24 @@ def clean_bilingual_text(text, remove_stopwords=True, normalize_slang=True):
 
     return " ".join(tokens)
 
+# Cyberbullying heuristic function
+def is_cyberbullying(text):
+    text = text.lower()
+    
+    # Heuristic 1: direct targeting (mentions, "you", "ikaw", "ka")
+    h1 = bool(re.search(r'@\w+|you|ikaw|ka', text))
+    
+    # Heuristic 2: insults + pronoun pattern
+    h2 = bool(re.search(r'(you|ikaw|ka).*(idiot|stupid|gago|tanga|bobo|slut|pokpok)', text))
+    
+    # Heuristic 3: threats
+    h3 = bool(re.search(r'kill you|patayin kita|saktan kita|hurt you', text))
+    
+    # Heuristic 4: repeated slurs
+    h4 = bool(re.search(r'(gago+|tanga+|bobo+)', text))
+    
+    # Combine heuristics
+    return h1 or h2 or h3 or h4
 
 
 app = Flask(__name__)
@@ -116,18 +134,33 @@ def home():
         text = request.form.get("input_text", "")
         if text:
 
-            # Clean input text first
+            # Clean input text
             cleaned_text = clean_bilingual_text(text)
 
-            # Transform input text using the vectorizer
+            # Vectorize
             X = vectorizer.transform([text])
-            # Get prediction
+
+            # Model prediction
             pred_label = model.predict(X)[0]
             pred_prob = model.predict_proba(X).max() * 100
+
+            result_label = "Neutral"
+
+            # If the model detects hateful/offensive content:
+            if pred_label == 1:
+                # Check cyberbullying heuristics
+                if is_cyberbullying(text):
+                    result_label = "Likely Cyberbullying"
+                else:
+                    result_label = "Hate/Offensive"
+            else:
+                result_label = "Neutral"
+
             prediction = {
-                "label": "Hate/Offensive" if pred_label == 1 else "Neutral",
+                "label": result_label,
                 "probability": f"{pred_prob:.2f}"
             }
+
     return render_template("home.html", prediction=prediction)
 
 @app.route("/about")
