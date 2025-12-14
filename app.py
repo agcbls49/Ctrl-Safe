@@ -5,12 +5,13 @@ import json
 import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
+from langdetect import detect, DetectorFactory
+
+DetectorFactory.seed = 0
 
 nltk.download('punkt')
 nltk.download('stopwords')
 nltk.download('punkt_tab')
-
-
 
 # Load Tagalog stopwords from JSON file
 with open("stopwords-tl.json", "r", encoding="utf-8") as f:
@@ -113,19 +114,30 @@ def is_cyberbullying(text):
     return h1 or h2 or h3 or h4
 
 
+# Language Detection
+def detect_language(text):
+    try:
+        lang = detect(text)
+        if lang == 'tl' or any(word in text.lower() for word in ["ka", "ako", "mo", "ng", "po"]):
+            return "Tagalog"
+        elif lang == 'en':
+            return "English"
+        else:
+            return lang
+    except:
+        return "Unknown"
+
+
 app = Flask(__name__)
 
-# Load the model
+# # Load the model
 with open("models/svm_model.pkl", "rb") as f:
     model = pickle.load(f)
 
-# Load the model
-# with open("models/voting_nb_svm.pkl", "rb") as f:
-#     model = pickle.load(f)
-
-# Load the vectorizer
+# # Load the vectorizer
 with open("models/vectorizer.pkl", "rb") as f:
     vectorizer = pickle.load(f)
+
 
 @app.route("/", methods=["GET", "POST"])
 def home():
@@ -134,34 +146,39 @@ def home():
         text = request.form.get("input_text", "")
         if text:
 
+            # Detect language (optional, can be used later)
+            lang_detected = detect_language(text)
+
             # Clean input text
             cleaned_text = clean_bilingual_text(text)
 
             # Vectorize
-            X = vectorizer.transform([text])
+            X = vectorizer.transform([cleaned_text])
 
             # Model prediction
-            pred_label = model.predict(X)[0]
-            pred_prob = model.predict_proba(X).max() * 100
+            pred_label = model.predict(X)[0]            # 0 = Neutral, 1 = Hate/Offensive
+            pred_prob = model.predict_proba(X)[0][1]*100    # Probability of class 1
 
             result_label = "Neutral"
+            OPTIMAL_THRESHOLD = 0.48  # You can adjust this
 
-            # If the model detects hateful/offensive content:
-            if pred_label == 1:
-                # Check cyberbullying heuristics
-                if is_cyberbullying(text):
-                    result_label = "Likely Cyberbullying"
+            if pred_label == 1 and pred_prob > OPTIMAL_THRESHOLD:
+                # Only flag if text length > 3 words OR contains cyberbullying pattern
+                if len(cleaned_text.split()) > 3 or is_cyberbullying(text):
+                    if is_cyberbullying(text):
+                        result_label = "Hate/Offensive - Likely Cyberbullying"
+                    else:
+                        result_label = "Hate/Offensive"
                 else:
-                    result_label = "Hate/Offensive"
-            else:
-                result_label = "Neutral"
+                    result_label = "Neutral"
 
+            # **Assign the result_label and probability to prediction**
             prediction = {
                 "label": result_label,
                 "probability": f"{pred_prob:.2f}"
             }
 
-    return render_template("home.html", prediction=prediction)
+            return render_template("home.html", prediction=prediction)
 
 @app.route("/about")
 def about():
