@@ -47,10 +47,11 @@
         <!-- Left Column: Textarea + Button -->
         <form style="display:flex; flex-direction:column; gap:16px;" method="POST">
             <textarea name="input_text" rows="15" placeholder="Enter words to detect"
-                class="p-6 text-xl resize-none border border-gray-300 rounded-xl 
-                focus:outline-none focus:ring-2 focus:ring-black 
-                selection:bg-black selection:text-white caret-black"
-                style="width:600px; height:470px; padding-top:5px; padding-left:5px;">{{ request.form.input_text if request.method=='POST' else '' }}</textarea>
+            class="p-6 text-xl resize-none border border-gray-300 rounded-xl 
+            focus:outline-none focus:ring-2 focus:ring-black 
+            selection:bg-black selection:text-white caret-black"
+            style="width:600px; height:470px; padding-top:5px; padding-left:5px;">{{ request.form.get('input_text', '') if request.method=='POST' else '' }}</textarea>
+
     
             <button type="submit" class="bg-yellow-300 hover:bg-yellow-400 active:bg-yellow-400 selection:bg-black selection:text-white"
                 style="padding:10px; font-size:24px; font-weight:bold; color:black; border-radius:0.5rem; border:none; width:100%;">
@@ -71,6 +72,11 @@
                     <div class="{% if prediction.label.strip() in ['Hate/Offensive', 'Hate/Offensive - Likely Cyberbullying'] %}text-red-600{% else %}text-green-600{% endif %}">
                         {{ prediction.probability }}%
                     </div>
+                    {% if prediction.language %}
+                    <div class="text-sm text-gray-700 mt-2">
+                        Detected Language: {{ prediction.language }}
+                    </div>
+                    {% endif %} 
                 {% else %}
                     <div class="text-green-600">
                         No text to detect.

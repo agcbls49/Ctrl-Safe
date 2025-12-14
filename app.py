@@ -23,6 +23,26 @@ english_stopwords = set(stopwords.words("english"))
 # Combine them
 all_stopwords = english_stopwords.union(tagalog_stopwords)
 
+# Scribble/Gibberish detection
+def is_scribble(text, threshold=0.7):
+    """
+    Detect if the text is mostly non-alphabetic gibberish.
+    threshold: proportion of non-alphabetic chars above which text is considered scribble
+    """
+    text = text.strip()
+    if not text:
+        return True
+
+    num_alpha = sum(c.isalpha() for c in text)
+    num_total = len(text)
+    
+    if num_total == 0:
+        return True
+
+    non_alpha_ratio = 1 - (num_alpha / num_total)
+    # Also consider very short or empty token texts as scribble
+    return non_alpha_ratio > threshold or num_alpha < 3
+
 
 # Cleaning Function
 def clean_bilingual_text(text, remove_stopwords=True, normalize_slang=True):
@@ -114,18 +134,24 @@ def is_cyberbullying(text):
     return h1 or h2 or h3 or h4
 
 
-# Language Detection
+# Language Detection (only English and Tagalog)
 def detect_language(text):
     try:
         lang = detect(text)
-        if lang == 'tl' or any(word in text.lower() for word in ["ka", "ako", "mo", "ng", "po"]):
-            return "Tagalog"
-        elif lang == 'en':
+        text_lower = text.lower()
+        # Tagalog keywords to help detect Filipino
+        tagalog_keywords = ["ka", "ako", "mo", "ng", "po", "siya", "kami", "nila", "natin", "ito"]
+        
+        if lang == 'en':
             return "English"
+        elif lang == 'tl' or any(word in text_lower for word in tagalog_keywords):
+            return "Tagalog"
         else:
-            return lang
+            # Default to English if unknown/unsupported
+            return "English"
     except:
-        return "Unknown"
+        # Fallback if detection fails
+        return "English"
 
 
 app = Flask(__name__)
@@ -133,6 +159,12 @@ app = Flask(__name__)
 # # Load the model
 with open("models/svm_model.pkl", "rb") as f:
     model = pickle.load(f)
+
+# with open("models/voting_lr_svm_model.pkl", "rb") as f:
+#     model = pickle.load(f)
+
+# with open("models/lr_model.pkl", "rb") as f:
+#     model = pickle.load(f)
 
 # # Load the vectorizer
 with open("models/vectorizer.pkl", "rb") as f:
@@ -142,43 +174,54 @@ with open("models/vectorizer.pkl", "rb") as f:
 @app.route("/", methods=["GET", "POST"])
 def home():
     prediction = None
+    lang_detected = None  # optional
     if request.method == "POST":
         text = request.form.get("input_text", "")
         if text:
+            try:
+                # Optional: detect language just to display
+                lang_detected = detect_language(text)
+                
+                # Clean text
+                cleaned_text = clean_bilingual_text(text)
 
-            # Detect language (optional, can be used later)
-            lang_detected = detect_language(text)
+                # Vectorize
+                X = vectorizer.transform([cleaned_text])
 
-            # Clean input text
-            cleaned_text = clean_bilingual_text(text)
+                # Predict
+                pred_label = model.predict(X)[0]
 
-            # Vectorize
-            X = vectorizer.transform([cleaned_text])
+                # VotingClassifier soft voting
+                try:
+                    pred_prob = model.predict_proba(X)[0][1] * 100
+                except AttributeError:
+                    # fallback if predict_proba not available
+                    pred_prob = 100 if pred_label == 1 else 0
 
-            # Model prediction
-            pred_label = model.predict(X)[0]            # 0 = Neutral, 1 = Hate/Offensive
-            pred_prob = model.predict_proba(X)[0][1]*100    # Probability of class 1
+                # Cyberbullying heuristic
+                cyberbullying = is_cyberbullying(text)
 
-            result_label = "Neutral"
-            OPTIMAL_THRESHOLD = 0.48  # You can adjust this
-
-            if pred_label == 1 and pred_prob > OPTIMAL_THRESHOLD:
-                # Only flag if text length > 3 words OR contains cyberbullying pattern
-                if len(cleaned_text.split()) > 3 or is_cyberbullying(text):
-                    if is_cyberbullying(text):
-                        result_label = "Hate/Offensive - Likely Cyberbullying"
+                # Determine result label
+                if pred_label == 1 and pred_prob > 50:
+                    if len(cleaned_text.split()) > 3:
+                        result_label = "Hate/Offensive - Likely Cyberbullying" if cyberbullying else "Hate/Offensive"
                     else:
-                        result_label = "Hate/Offensive"
+                        result_label = "Neutral"
                 else:
                     result_label = "Neutral"
 
-            # **Assign the result_label and probability to prediction**
-            prediction = {
-                "label": result_label,
-                "probability": f"{pred_prob:.2f}"
-            }
+                # Prepare prediction dict
+                prediction = {
+                    "label": result_label,
+                    "probability": f"{pred_prob:.2f}",
+                    "language": lang_detected  # optional for display
+                }
 
-            return render_template("home.html", prediction=prediction)
+            except Exception as e:
+                print("Error during prediction:", e)
+                prediction = {"label": "Error", "probability": "0.00", "language": lang_detected}
+
+    return render_template("home.html", prediction=prediction)
 
 @app.route("/about")
 def about():
