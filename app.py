@@ -23,27 +23,6 @@ english_stopwords = set(stopwords.words("english"))
 # Combine them
 all_stopwords = english_stopwords.union(tagalog_stopwords)
 
-# Scribble/Gibberish detection
-def is_scribble(text, threshold=0.7):
-    """
-    Detect if the text is mostly non-alphabetic gibberish.
-    threshold: proportion of non-alphabetic chars above which text is considered scribble
-    """
-    text = text.strip()
-    if not text:
-        return True
-
-    num_alpha = sum(c.isalpha() for c in text)
-    num_total = len(text)
-    
-    if num_total == 0:
-        return True
-
-    non_alpha_ratio = 1 - (num_alpha / num_total)
-    # Also consider very short or empty token texts as scribble
-    return non_alpha_ratio > threshold or num_alpha < 3
-
-
 # Cleaning Function
 def clean_bilingual_text(text, remove_stopwords=True, normalize_slang=True):
     text = str(text).lower().strip()
@@ -140,7 +119,7 @@ def detect_language(text):
         lang = detect(text)
         text_lower = text.lower()
         # Tagalog keywords to help detect Filipino
-        tagalog_keywords = ["ka", "ako", "mo", "ng", "po", "siya", "kami", "nila", "natin", "ito"]
+        tagalog_keywords = ["ka", "ako", "mo", "ng", "po", "siya", "kami", "nila", "natin", "ito", "kita", "sayo"]
         
         if lang == 'en':
             return "English"
@@ -157,11 +136,11 @@ def detect_language(text):
 app = Flask(__name__)
 
 # # Load the model
-with open("models/svm_model.pkl", "rb") as f:
-    model = pickle.load(f)
-
-# with open("models/voting_lr_svm_model.pkl", "rb") as f:
+# with open("models/svm_model.pkl", "rb") as f:
 #     model = pickle.load(f)
+
+with open("models/voting_lr_svm_model.pkl", "rb") as f:
+    model = pickle.load(f)
 
 # with open("models/lr_model.pkl", "rb") as f:
 #     model = pickle.load(f)
@@ -193,7 +172,7 @@ def home():
 
                 # VotingClassifier soft voting
                 try:
-                    pred_prob = model.predict_proba(X)[0][1] * 100
+                    pred_prob = model.predict_proba(X)[0][1]*100
                 except AttributeError:
                     # fallback if predict_proba not available
                     pred_prob = 100 if pred_label == 1 else 0
@@ -202,11 +181,11 @@ def home():
                 cyberbullying = is_cyberbullying(text)
 
                 # Determine result label
-                if pred_label == 1 and pred_prob > 50:
+                if pred_label == 1 and pred_prob > 51:
                     if len(cleaned_text.split()) > 3:
                         result_label = "Hate/Offensive - Likely Cyberbullying" if cyberbullying else "Hate/Offensive"
                     else:
-                        result_label = "Neutral"
+                        result_label = "Hate/Offensive"
                 else:
                     result_label = "Neutral"
 
