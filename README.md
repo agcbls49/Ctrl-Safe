@@ -14,7 +14,13 @@ Cyrelle Kristin P. Gapit - Machine Learning Developer <br>
 Francen P. Manalo - QA Tester <br>
 
 ## Screenshots
+<img width="1892" height="909" alt="Image" src="https://github.com/user-attachments/assets/64ecab1f-932f-4cdc-865a-0fa5bd3a2f36" />
+<img width="1890" height="905" alt="Image" src="https://github.com/user-attachments/assets/7ef94ec4-1d68-4323-97bc-2fc8ee8d5e72" />
+<img width="1891" height="905" alt="Image" src="https://github.com/user-attachments/assets/52cf797b-cf93-4c82-8d24-046c3b6ebe88" />
+<img width="1908" height="905" alt="Image" src="https://github.com/user-attachments/assets/66dd8534-5969-4b4b-9aa2-9d39ac39d722" />
 
+## Model Used
+Voting Logistic Regression + SVM (Support Vector Machine)
 
 ## Note
 * Text-only web app (Python Flask)
